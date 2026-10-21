@@ -140,34 +140,84 @@ function ProjectDetails({ p, onClose, trigger }: { p: Project; onClose: () => vo
 }
 
 function Projects() {
-  const [selected, setSelected] = useState<Project | null>(null);
+  const wrap = useRef<HTMLElement>(null);
+  const [i, setI] = useState(0);
+  const [open, setOpen] = useState(false);
   const trigger = useRef<HTMLButtonElement | null>(null);
+  useEffect(() => {
+    const onScroll = () => {
+      const el = wrap.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const p = Math.min(Math.max(-r.top / (r.height - window.innerHeight), 0), 0.999);
+      setI(Math.floor(p * projects.length));
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, []);
+
+  const p = projects[i];
+  const c = accent[i % accent.length];
+  const stack = p.stack.split(", ").filter(Boolean);
+  const btn = "rounded-full px-6 py-3 font-medium transition hover:brightness-125";
+
   return (
-    <section id="projects" className="scroll-mt-24 border-t border-line py-16">
-      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-        <div><p className="mb-2 text-sm font-semibold uppercase tracking-widest text-signal">Selected work</p>
-          <h2 className="font-display text-3xl font-bold">Products I've built</h2></div>
-        <p className="max-w-md text-mute">From multi-tenant platforms to focused developer tools. Explore the implementation and decisions behind each project.</p>
-      </div>
-      <div className="grid gap-6 md:grid-cols-2">
-        {projects.map((p, i) => (
-          <article key={p.name} className="flex flex-col rounded-2xl border border-line bg-white p-6 md:p-8">
-            <div className="mb-5 flex items-center justify-between gap-3 text-xs font-semibold uppercase tracking-wider text-mute">
-              <span>{p.status}</span><span>{String(i + 1).padStart(2, "0")}</span>
+    <section id="projects" ref={wrap} style={{ height: `${projects.length * 80 + 20}vh` }}>
+      <div className="mx-auto max-w-6xl px-6"><div className="border-t border-line" /></div>
+      <div className="sticky top-0 h-screen">
+        <div className="mx-auto flex h-full max-w-6xl flex-col justify-center px-6 pb-8 pt-20">
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <h2 className="font-display text-2xl font-bold">Projects</h2>
+              <span className="mt-2 block h-1 w-12 rounded-full" style={{ background: c }} />
             </div>
-            {p.name === "TextKit" && <img src="/textkit-preview.webp" alt="TextKit dashboard with text transformation, analysis and encoding tools" width="1440" height="1000" loading="lazy" className="mb-5 w-full rounded-lg border border-line" />}
-            <h3 className="font-display text-2xl font-bold">{p.name}</h3>
-            <p className="mt-3 leading-relaxed text-mute">{p.desc}</p>
-            <div className="my-5 flex flex-wrap gap-2">{p.stack.split(", ").map((item) => <span key={item} className="rounded-md bg-paper px-2 py-1 text-xs">{item}</span>)}</div>
-            <div className="mt-auto flex flex-wrap items-center gap-4 pt-3 text-sm font-semibold">
-              <button className="rounded-full bg-signal px-4 py-2 text-white" onClick={(event) => { trigger.current = event.currentTarget; setSelected(p); }}>Project details</button>
-              {p.repo && <a href={`${GH}/${p.repo}`} target="_blank" rel="noreferrer" className="text-signal underline-offset-4 hover:underline">GitHub ↗</a>}
-              {p.live && <a href={p.live} target="_blank" rel="noreferrer" className="text-signal underline-offset-4 hover:underline">Live app ↗</a>}
+            <span className="font-display text-xl font-bold" style={{ color: c }}>
+              {String(i + 1).padStart(2, "0")} / {String(projects.length).padStart(2, "0")}
+            </span>
+          </div>
+          <div key={i} className="rise grid items-center gap-8 md:grid-cols-[1.2fr_1fr]">
+            <div>
+              <h3 className="font-display text-4xl font-bold leading-tight md:text-6xl" style={{ color: c }}>{p.name}</h3>
+              <p className="mt-5 max-w-xl text-lg leading-relaxed text-mute">{p.desc}</p>
+              {stack.length > 0 && (
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {stack.map((s) => <span key={s} className="rounded-full border px-3 py-1 text-sm" style={{ borderColor: c, background: `${c}1a` }}>{s}</span>)}
+                </div>
+              )}
+              <div className="mt-8 flex flex-wrap gap-3">
+                {p.repo && <a className={`${btn} border`} style={{ borderColor: c, color: c }} href={`${GH}/${p.repo}`} target="_blank" rel="noreferrer">GitHub</a>}
+                <button className={`${btn} text-white`} style={{ background: c, boxShadow: `0 8px 24px ${c}55` }} onClick={(event) => { trigger.current = event.currentTarget; setOpen(true); }}>Explore</button>
+                {p.live ? (
+                  <a className={`${btn} border border-ink`} href={p.live} target="_blank" rel="noreferrer">Go Live</a>
+                ) : (
+                  <span aria-disabled="true" title="Live link coming soon" className={`${btn} cursor-not-allowed border border-line text-mute/60`}>Go Live · soon</span>
+                )}
+              </div>
             </div>
-          </article>
-        ))}
+            <div className="hidden rounded-2xl border bg-white p-5 font-mono text-sm md:block" style={{ borderColor: c, boxShadow: `0 12px 40px ${c}33` }}>
+              <div className="mb-4 flex gap-2">
+                {["#ff5f56", "#ffbd2e", "#27c93f"].map((d) => <span key={d} className="h-3 w-3 rounded-full" style={{ background: d }} />)}
+              </div>
+              <p style={{ color: c }}>$ project --info</p>
+              <p className="mt-2 text-mute">name: {p.name}</p>
+              {stack.length > 0 && <p className="text-mute">stack:</p>}
+              {stack.map((s) => <p key={s}>&nbsp;&nbsp;+ {s}</p>)}
+              <p className="mt-2 text-mute">status: {p.repo ? "public repository" : "private company project"}</p>
+            </div>
+          </div>
+          <div className="mt-10 flex gap-2">
+            {projects.map((q, n) => (
+              <span key={q.name} className="h-1.5 rounded-full transition-all" style={{ width: n === i ? 36 : 8, background: n === i ? c : "#d5dce6" }} />
+            ))}
+          </div>
+        </div>
       </div>
-      {selected && <ProjectDetails p={selected} trigger={trigger.current} onClose={() => setSelected(null)} />}
+      {open && <ProjectDetails p={p} trigger={trigger.current} onClose={() => setOpen(false)} />}
     </section>
   );
 }
@@ -289,9 +339,9 @@ export default function App() {
         </Section>
       </div>
 
-      <div className="mx-auto max-w-6xl px-6">
-        <Projects />
+      <Projects />
 
+      <div className="mx-auto max-w-6xl px-6">
         <Section id="education" title="Education" color={accent[3]}>
           {education.map(([a, b]) => (
             <div key={a} className="flex flex-col justify-between gap-1 border-b border-line py-3 first:pt-0 sm:flex-row">
