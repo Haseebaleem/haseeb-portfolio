@@ -67,8 +67,12 @@ export default function ScrollMorph() {
       if (disposed) return;
       const delta = Math.min((time - lastTime) / 1000, .05); lastTime = time;
       ctx.clearRect(0, 0, innerWidth, innerHeight);
-      restore();
-      if (reduced.matches || document.hidden || !anchors.length) return;
+      if (reduced.matches || document.hidden || !anchors.length) {
+        restore();
+        return;
+      }
+      // Keep semantic headings for assistive technology; only the travelling mesh paints their visible text.
+      headings.forEach(element => { element.style.opacity = "0"; });
       const scroll = window.scrollY;
       let index = anchors.findIndex(a => scroll < a.stop);
       if (index < 0) index = anchors.length;
@@ -105,9 +109,6 @@ export default function ScrollMorph() {
         const target = textAnchor?.points[Math.floor(i / sphere.length * textAnchor.points.length)];
         return { x: x + mix(sx, target?.x || 0, textAmount), y: y + mix(sy, target?.y || 0, textAmount) };
       });
-      // Native headings remain accessible; fade them only while the particles form their letters.
-      if (from && outgoing > 0) from.element.style.opacity = String(1 - outgoing);
-      if (incoming > 0) to.element.style.opacity = String(1 - incoming);
       ctx.globalAlpha = 1 - textAmount;
       ctx.strokeStyle = "#2f5bea"; ctx.lineWidth = .85;
       ctx.beginPath();
