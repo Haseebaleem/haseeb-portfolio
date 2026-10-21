@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { info, about, skills, jobs, projects, education } from "./data";
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
+import { info, roles, about, skills, jobs, projects, education } from "./data";
 
 type Project = (typeof projects)[number];
+const Hero3D = lazy(() => import("./Hero3D"));
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const accent = ["#2f5bea", "#7c3aed", "#db2777", "#0891b2", "#ea580c"];
 const GH = "https://github.com/Haseebaleem";
 
@@ -69,6 +71,31 @@ function Photo() {
       <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-signal to-[#7c3aed] font-display text-6xl font-bold text-white">HA</div>
       {ok && <img src="/haseeb.jpg" alt="Haseeb Aleem" onError={() => setOk(false)} className="absolute inset-0 h-full w-full object-cover" />}
     </div>
+  );
+}
+
+function Typewriter({ words }: { words: string[] }) {
+  const [w, setW] = useState(0);
+  const [n, setN] = useState(0);
+  const [del, setDel] = useState(false);
+  useEffect(() => {
+    if (reduceMotion) return;
+    const word = words[w];
+    if (del && n === 0) {
+      setDel(false);
+      setW((x) => (x + 1) % words.length);
+      return;
+    }
+    const full = !del && n === word.length;
+    const t = window.setTimeout(() => (full ? setDel(true) : setN(n + (del ? -1 : 1))), full ? 1400 : del ? 35 : 80);
+    return () => window.clearTimeout(t);
+  }, [n, del, w, words]);
+  if (reduceMotion) return <>{words[0]}</>;
+  return (
+    <>
+      {words[w].slice(0, n)}
+      <span className="caret ml-1 inline-block h-[1em] w-[3px] translate-y-[3px] bg-[#db2777]" />
+    </>
   );
 }
 
@@ -181,7 +208,8 @@ export default function App() {
               Haseeb Aleem
             </h1>
             <p className="rise rise-2 mt-6 min-h-[2.8rem] font-display text-xl font-medium text-[#db2777] md:text-2xl">
-              Senior Full Stack Developer
+              <span className="sr-only">{roles[0]}</span>
+              <span aria-hidden="true"><Typewriter words={roles} /></span>
             </p>
             <p className="rise rise-2 mt-4 max-w-md text-lg leading-relaxed text-mute">{info.tagline}</p>
             <div className="rise rise-3 mt-8 flex flex-wrap gap-3">
@@ -189,8 +217,8 @@ export default function App() {
               <a href="#contact" className="rounded-full border border-ink px-6 py-3 font-medium hover:bg-ink hover:text-white">Get in touch</a>
             </div>
           </div>
-          <div className="hero-portrait relative mx-auto aspect-square w-full max-w-[440px]">
-            <div aria-hidden="true" className="portrait-orbit absolute inset-[12%] rounded-full border border-signal/20" />
+          <div className="relative mx-auto aspect-square w-full max-w-[340px] md:max-w-[520px]">
+            <div aria-hidden="true" className="absolute inset-0"><Suspense fallback={null}><Hero3D /></Suspense></div>
             <Photo />
           </div>
         </section>
