@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
+import HeroMotion from "./HeroMotion";
 import { info, roles, about, skills, jobs, projects, education } from "./data";
 
 type Project = (typeof projects)[number];
@@ -252,7 +253,7 @@ export default function App() {
       </header>
 
       <main id="main"><div id="top" className="mx-auto max-w-6xl px-6 pt-16">
-        <section className="grid items-center gap-6 py-10 lg:min-h-[85vh] lg:grid-cols-2">
+        <HeroMotion>
           <div>
             <h1 className="rise bg-gradient-to-r from-[#2f5bea] via-[#7c3aed] to-[#db2777] bg-clip-text font-display text-4xl font-bold leading-tight tracking-tight text-transparent sm:text-6xl xl:text-7xl">
               Haseeb Aleem
@@ -268,10 +269,10 @@ export default function App() {
             </div>
           </div>
           <div className="relative mx-auto aspect-square w-full max-w-[340px] md:max-w-[520px]">
-            <div aria-hidden="true" className="absolute inset-0"><Suspense fallback={null}><Hero3D /></Suspense></div>
-            <Photo />
+            <div aria-hidden="true" className="hero-network absolute inset-0"><Suspense fallback={null}><Hero3D /></Suspense></div>
+            <div className="hero-photo absolute inset-0"><Photo /></div>
           </div>
-        </section>
+        </HeroMotion>
 
         <Section id="about" title="About" color={accent[0]}>
           <p className="max-w-2xl text-lg leading-relaxed">{about}</p>

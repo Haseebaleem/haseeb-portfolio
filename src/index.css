@@ -56,3 +56,35 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--color-signal); 
 .project-dialog::backdrop { background: rgb(16 27 51 / 65%); }
 .skip-link { position: fixed; top: -5rem; left: 1rem; z-index: 100; padding: .75rem 1rem; background: white; border-radius: .5rem; }
 .skip-link:focus { top: 1rem; }
+
+.hero-motion { position: relative; isolation: isolate; overflow: clip; }
+.hero-motion > :not(.hero-glow) { position: relative; z-index: 1; }
+.hero-glow {
+  position: absolute; z-index: 0; pointer-events: none;
+  left: 0; top: 0; width: min(560px, 100%); aspect-ratio: 1;
+  border-radius: 50%; opacity: .65;
+  mask-image: radial-gradient(closest-side, #000 20%, transparent 100%);
+  background: radial-gradient(circle at 35% 40%, rgb(47 91 234 / 16%), transparent 58%),
+              radial-gradient(circle at 65% 60%, rgb(124 58 237 / 14%), transparent 62%);
+  transform: translate(var(--glow-x, 70%), var(--glow-y, 25%)) translate(-50%, -50%);
+  transition: transform 220ms ease-out, opacity 400ms ease;
+}
+.hero-motion[data-pointer-active] .hero-glow { opacity: 1; }
+.hero-photo, .hero-network { transition: transform 350ms ease-out; }
+.hero-photo {
+  pointer-events: none;
+  transform: perspective(900px) translate3d(var(--shift-x, 0px), var(--shift-y, 0px), 0)
+    rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+}
+.hero-network { transform: translate3d(calc(var(--shift-x, 0px) * -1), calc(var(--shift-y, 0px) * -1), 0); }
+@keyframes hero-glow-drift {
+  from { transform: translate(15%, 25%) scale(.9); opacity: .5; }
+  to { transform: translate(35%, 45%) scale(1.1); opacity: .85; }
+}
+@media (hover: none), (pointer: coarse) {
+  .hero-glow { animation: hero-glow-drift 8s ease-in-out infinite alternate; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-glow { animation: none; transition: none; }
+  .hero-photo, .hero-network { transform: none; transition: none; }
+}
