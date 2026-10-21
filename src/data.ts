@@ -35,7 +35,7 @@ export const jobs = [
       "Build and ship custom web applications for clients, from requirements and estimates to deployment and support, using Node.js, React, TypeScript, PostgreSQL and Laravel.",
       "Building an attendance web app for a client, using browser geolocation to capture where employees mark attendance.",
       "Create workflow automations with n8n, including a B2B lead generation agent made of 8 workflows.",
-      "Manage an Upwork profile and project catalog, keeping clients updated with clear scope and milestones.",
+      "Own client delivery from requirements and estimates through implementation, deployment and ongoing support.",
     ],
   },
   {
@@ -101,6 +101,9 @@ export const jobs = [
 export const projects = [
   {
     name: "iPanel",
+    status: "Company platform",
+    ownership: "Built the platform end to end and led the eight-person delivery team.",
+    highlights: ["Tenant-level access control for multiple ISP organizations.", "PostgreSQL and Prisma data layer supporting ISP management workflows.", "Owned implementation, code reviews, mentoring and deployment work."],
     repo: "",
     live: "",
     desc: "Multi-tenant ISP management SaaS used by multiple providers, with tenant-level access control and high query throughput. This is a company project, so there is no public code.",
@@ -108,6 +111,9 @@ export const projects = [
   },
   {
     name: "Inventory-POS",
+    status: "Full-stack application",
+    ownership: "Designed and implemented the frontend, API and database.",
+    highlights: ["Atomic sales transactions with row-level stock locking.", "Owner and cashier roles, stock movements and audit history.", "Thermal-print receipts and concurrency-safe sale numbers."],
     repo: "Inventory-POS",
     live: "",
     desc: "Multi-cashier point-of-sale and inventory system. Sales complete atomically with row-level locking, sale numbers are concurrency-safe, and receipts are thermal-printer ready.",
@@ -115,6 +121,9 @@ export const projects = [
   },
   {
     name: "Marketplace",
+    status: "Full-stack application",
+    ownership: "Designed and implemented the application across the frontend, backend and shared types.",
+    highlights: ["Admin, supplier and buyer workflows.", "TypeScript monorepo with shared contracts.", "Audit logging and concurrency-aware commerce operations."],
     repo: "Marketplace",
     live: "",
     desc: "Multi-vendor e-commerce platform with Admin, Supplier and Buyer roles, concurrency-safe operations, audit logging and a type-safe monorepo.",
@@ -122,6 +131,9 @@ export const projects = [
   },
   {
     name: "Task-Manager",
+    status: "Full-stack application",
+    ownership: "Built the frontend, backend and database integration.",
+    highlights: ["Collaborative Kanban workflows with Socket.io.", "Threaded comments and activity timelines.", "Authenticated multi-user access and audit history."],
     repo: "Task-Manager",
     live: "",
     desc: "Real-time collaborative Kanban board with multi-user auth, activity timelines, threaded comments and a full audit trail.",
@@ -129,6 +141,9 @@ export const projects = [
   },
   {
     name: "NewsHub",
+    status: "Full-stack application",
+    ownership: "Built the React application and Laravel API with PostgreSQL persistence.",
+    highlights: ["Server-side news proxy keeps provider keys out of the browser.", "Bookmarks retain article snapshots.", "Reading history, preferences and activity statistics."],
     repo: "NewsHub",
     live: "",
     desc: "Personal news aggregator with bookmarks, reading history and stats. A server-side API proxy keeps third-party API keys out of the browser.",
@@ -136,6 +151,9 @@ export const projects = [
   },
   {
     name: "Auth-Boilerplate",
+    status: "Backend starter",
+    ownership: "Built the authentication API and database integration.",
+    highlights: ["Short-lived access tokens with refresh-token rotation.", "Role-based authorization and schema validation.", "Password hashing and centralized error responses."],
     repo: "Auth-Boilerplate",
     live: "",
     desc: "Production-ready Node.js authentication starter with JWT access and refresh token rotation, bcrypt hashing, role-based authorization and strict input validation.",
@@ -143,17 +161,23 @@ export const projects = [
   },
   {
     name: "TextKit",
+    status: "Browser application",
+    ownership: "Rebuilt and implemented the current application, tools and tests.",
+    highlights: ["Text transformations, encoding, JSON tools and diff utilities.", "Client-side processing with local history.", "Pure utility functions covered by automated tests."],
     repo: "TextKit",
-    live: "",
+    live: "https://haseeb-textkit.netlify.app",
     desc: "Developer text utilities suite with 15+ tools for transformations, analysis, encoding and generators, with a dark-first UI and unit tests.",
     stack: "React, TypeScript, Vite, Tailwind CSS",
   },
   {
     name: "Inkwell",
+    status: "In development",
+    ownership: "Built the current frontend and backend foundation.",
+    highlights: ["JWT authentication with refresh-token rotation.", "MongoDB-backed API and protected client routes.", "Themed workspace shell; note features are not yet complete."],
     repo: "Inkwell",
     live: "",
-    desc: "A modern note-taking app for thinkers, writers and developers.",
-    stack: "",
+    desc: "Foundation for a note-taking application, with authentication, protected routing and a themed workspace. Note editing is still in development.",
+    stack: "React, TypeScript, Node.js, Express, MongoDB",
   },
 ];
 

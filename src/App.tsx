@@ -1,13 +1,9 @@
-import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
-import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import { info, roles, about, skills, jobs, projects, education } from "./data";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { info, about, skills, jobs, projects, education } from "./data";
 
 type Project = (typeof projects)[number];
-const Hero3D = lazy(() => import("./Hero3D"));
 const accent = ["#2f5bea", "#7c3aed", "#db2777", "#0891b2", "#ea580c"];
 const GH = "https://github.com/Haseebaleem";
-const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const iconMap: [string, string][] = [
   ["javascript", "javascript/javascript-original"],
@@ -76,164 +72,82 @@ function Photo() {
   );
 }
 
-function Typewriter({ words }: { words: string[] }) {
-  const [w, setW] = useState(0);
-  const [n, setN] = useState(0);
-  const [del, setDel] = useState(false);
+function ProjectDetails({ p, onClose, trigger }: { p: Project; onClose: () => void; trigger: HTMLButtonElement | null }) {
+  const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => {
-    if (reduceMotion) return;
-    const word = words[w];
-    if (del && n === 0) {
-      setDel(false);
-      setW((x) => (x + 1) % words.length);
-      return;
-    }
-    const full = !del && n === word.length;
-    const t = window.setTimeout(() => (full ? setDel(true) : setN(n + (del ? -1 : 1))), full ? 1400 : del ? 35 : 80);
-    return () => window.clearTimeout(t);
-  }, [n, del, w, words]);
-  if (reduceMotion) return <>{words[0]}</>;
-  return (
-    <>
-      {words[w].slice(0, n)}
-      <span className="caret ml-1 inline-block h-[1em] w-[3px] translate-y-[3px] bg-[#db2777]" />
-    </>
-  );
-}
-
-const fixUrl = (repo: string) => (u: string) =>
-  /^(https?:|mailto:|#|data:)/.test(u) ? u : `https://raw.githubusercontent.com/Haseebaleem/${repo}/HEAD/${u.replace(/^\.?\//, "")}`;
-
-function Readme({ p, onClose }: { p: Project; onClose: () => void }) {
-  const [md, setMd] = useState<string | null>(null);
-  const [err, setErr] = useState(false);
-  useEffect(() => {
-    if (!p.repo) return;
-    fetch(`https://raw.githubusercontent.com/Haseebaleem/${p.repo}/HEAD/README.md`)
-      .then((r) => (r.ok ? r.text() : Promise.reject()))
-      .then(setMd)
-      .catch(() => setErr(true));
-  }, [p.repo]);
-  useEffect(() => {
-    const k = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", k);
+    const previous = trigger;
+    const overflow = document.body.style.overflow;
+    dialog.current?.showModal();
     document.body.style.overflow = "hidden";
     return () => {
-      window.removeEventListener("keydown", k);
-      document.body.style.overflow = "";
+      document.body.style.overflow = overflow;
+      dialog.current?.close();
+      previous?.focus();
     };
-  }, [onClose]);
+  }, []);
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
-      <div role="dialog" aria-modal="true" className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white text-ink shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between border-b border-line px-5 py-3">
-          <span className="font-display text-lg font-bold">{p.name}</span>
-          <div className="flex gap-2 text-sm">
-            {p.repo && <a className="rounded-full border border-line px-3 py-1 hover:border-signal" href={`${GH}/${p.repo}`} target="_blank" rel="noreferrer">GitHub</a>}
-            <button className="rounded-full bg-ink px-3 py-1 text-white" onClick={onClose}>Close</button>
-          </div>
+    <dialog ref={dialog} aria-labelledby="project-title" onCancel={onClose}
+      onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
+      className="project-dialog rounded-2xl bg-white p-0 text-ink shadow-2xl">
+      <div className="p-6 md:p-8">
+        <div className="flex items-start justify-between gap-4">
+          <h2 id="project-title" className="font-display text-3xl font-bold">{p.name}</h2>
+          <button autoFocus onClick={onClose} className="rounded-full border border-line px-4 py-2">Close</button>
         </div>
-        <div className="readme overflow-y-auto px-6 py-5">
-          {!p.repo || err ? (
-            <>
-              <p>{p.desc}</p>
-              {err && <p className="text-mute">The README could not be loaded. You can read the repository on GitHub.</p>}
-            </>
-          ) : md === null ? (
-            <p className="text-mute">Loading README…</p>
-          ) : (
-            <Markdown remarkPlugins={[remarkGfm]} urlTransform={fixUrl(p.repo)}>{md}</Markdown>
-          )}
+        <p className="mt-3 text-sm font-medium text-signal">{p.status}</p>
+        <p className="mt-6 text-lg leading-relaxed text-mute">{p.desc}</p>
+        <h3 className="mt-6 font-semibold">My contribution</h3>
+        <p className="mt-2 leading-relaxed text-mute">{p.ownership}</p>
+        <h3 className="mt-6 font-semibold">Engineering highlights</h3>
+        <ul className="mt-3 list-disc space-y-2 pl-5 text-mute">
+          {p.highlights.map((item) => <li key={item}>{item}</li>)}
+        </ul>
+        <p className="mt-6 text-sm text-mute">{p.stack}</p>
+        <div className="mt-6 flex flex-wrap gap-3">
+          {p.repo && <a className="rounded-full border border-line px-5 py-3" href={`${GH}/${p.repo}`} target="_blank" rel="noreferrer">Source & documentation ↗</a>}
+          {p.live && <a className="rounded-full bg-signal px-5 py-3 text-white" href={p.live} target="_blank" rel="noreferrer">Open live app ↗</a>}
         </div>
       </div>
-    </div>
+    </dialog>
   );
 }
 
 function Projects() {
-  const wrap = useRef<HTMLElement>(null);
-  const [i, setI] = useState(0);
-  const [open, setOpen] = useState(false);
-  useEffect(() => {
-    const onScroll = () => {
-      const el = wrap.current;
-      if (!el) return;
-      const r = el.getBoundingClientRect();
-      const p = Math.min(Math.max(-r.top / (r.height - window.innerHeight), 0), 0.999);
-      setI(Math.floor(p * projects.length));
-    };
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-    };
-  }, []);
-
-  const p = projects[i];
-  const c = accent[i % accent.length];
-  const stack = p.stack.split(", ").filter(Boolean);
-  const btn = "rounded-full px-6 py-3 font-medium transition hover:brightness-125";
-
+  const [selected, setSelected] = useState<Project | null>(null);
+  const trigger = useRef<HTMLButtonElement | null>(null);
   return (
-    <section id="projects" ref={wrap} style={{ height: `${projects.length * 80 + 20}vh` }}>
-      <div className="mx-auto max-w-6xl px-6"><div className="border-t border-line" /></div>
-      <div className="sticky top-0 h-screen">
-        <div className="mx-auto flex h-full max-w-6xl flex-col justify-center px-6 pb-8 pt-20">
-          <div className="mb-8 flex items-center justify-between">
-            <div>
-              <h2 className="font-display text-2xl font-bold">Projects</h2>
-              <span className="mt-2 block h-1 w-12 rounded-full" style={{ background: c }} />
-            </div>
-            <span className="font-display text-xl font-bold" style={{ color: c }}>
-              {String(i + 1).padStart(2, "0")} / {String(projects.length).padStart(2, "0")}
-            </span>
-          </div>
-          <div key={i} className="rise grid items-center gap-8 md:grid-cols-[1.2fr_1fr]">
-            <div>
-              <h3 className="font-display text-4xl font-bold leading-tight md:text-6xl" style={{ color: c }}>{p.name}</h3>
-              <p className="mt-5 max-w-xl text-lg leading-relaxed text-mute">{p.desc}</p>
-              {stack.length > 0 && (
-                <div className="mt-5 flex flex-wrap gap-2">
-                  {stack.map((s) => <span key={s} className="rounded-full border px-3 py-1 text-sm" style={{ borderColor: c, background: `${c}1a` }}>{s}</span>)}
-                </div>
-              )}
-              <div className="mt-8 flex flex-wrap gap-3">
-                {p.repo && <a className={`${btn} border`} style={{ borderColor: c, color: c }} href={`${GH}/${p.repo}`} target="_blank" rel="noreferrer">GitHub</a>}
-                <button className={`${btn} text-white`} style={{ background: c, boxShadow: `0 8px 24px ${c}55` }} onClick={() => setOpen(true)}>Explore</button>
-                {p.live ? (
-                  <a className={`${btn} border border-ink`} href={p.live} target="_blank" rel="noreferrer">Go Live</a>
-                ) : (
-                  <span aria-disabled="true" title="Live link coming soon" className={`${btn} cursor-not-allowed border border-line text-mute/60`}>Go Live · soon</span>
-                )}
-              </div>
-            </div>
-            <div className="hidden rounded-2xl border bg-white p-5 font-mono text-sm md:block" style={{ borderColor: c, boxShadow: `0 12px 40px ${c}33` }}>
-              <div className="mb-4 flex gap-2">
-                {["#ff5f56", "#ffbd2e", "#27c93f"].map((d) => <span key={d} className="h-3 w-3 rounded-full" style={{ background: d }} />)}
-              </div>
-              <p style={{ color: c }}>$ project --info</p>
-              <p className="mt-2 text-mute">name: {p.name}</p>
-              {stack.length > 0 && <p className="text-mute">stack:</p>}
-              {stack.map((s) => <p key={s}>&nbsp;&nbsp;+ {s}</p>)}
-              <p className="mt-2 text-mute">status: {p.repo ? "public repository" : "private company project"}</p>
-            </div>
-          </div>
-          <div className="mt-10 flex gap-2">
-            {projects.map((q, n) => (
-              <span key={q.name} className="h-1.5 rounded-full transition-all" style={{ width: n === i ? 36 : 8, background: n === i ? c : "#d5dce6" }} />
-            ))}
-          </div>
-        </div>
+    <section id="projects" className="scroll-mt-24 border-t border-line py-16">
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <div><p className="mb-2 text-sm font-semibold uppercase tracking-widest text-signal">Selected work</p>
+          <h2 className="font-display text-3xl font-bold">Products I've built</h2></div>
+        <p className="max-w-md text-mute">From multi-tenant platforms to focused developer tools. Explore the implementation and decisions behind each project.</p>
       </div>
-      {open && <Readme p={p} onClose={() => setOpen(false)} />}
+      <div className="grid gap-6 md:grid-cols-2">
+        {projects.map((p, i) => (
+          <article key={p.name} className="flex flex-col rounded-2xl border border-line bg-white p-6 md:p-8">
+            <div className="mb-5 flex items-center justify-between gap-3 text-xs font-semibold uppercase tracking-wider text-mute">
+              <span>{p.status}</span><span>{String(i + 1).padStart(2, "0")}</span>
+            </div>
+            {p.name === "TextKit" && <img src="/textkit-preview.webp" alt="TextKit dashboard with text transformation, analysis and encoding tools" width="1440" height="1000" loading="lazy" className="mb-5 w-full rounded-lg border border-line" />}
+            <h3 className="font-display text-2xl font-bold">{p.name}</h3>
+            <p className="mt-3 leading-relaxed text-mute">{p.desc}</p>
+            <div className="my-5 flex flex-wrap gap-2">{p.stack.split(", ").map((item) => <span key={item} className="rounded-md bg-paper px-2 py-1 text-xs">{item}</span>)}</div>
+            <div className="mt-auto flex flex-wrap items-center gap-4 pt-3 text-sm font-semibold">
+              <button className="rounded-full bg-signal px-4 py-2 text-white" onClick={(event) => { trigger.current = event.currentTarget; setSelected(p); }}>Project details</button>
+              {p.repo && <a href={`${GH}/${p.repo}`} target="_blank" rel="noreferrer" className="text-signal underline-offset-4 hover:underline">GitHub ↗</a>}
+              {p.live && <a href={p.live} target="_blank" rel="noreferrer" className="text-signal underline-offset-4 hover:underline">Live app ↗</a>}
+            </div>
+          </article>
+        ))}
+      </div>
+      {selected && <ProjectDetails p={selected} trigger={trigger.current} onClose={() => setSelected(null)} />}
     </section>
   );
 }
 
 export default function App() {
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   useEffect(() => {
     const f = () => setScrolled(window.scrollY > 20);
     f();
@@ -243,26 +157,31 @@ export default function App() {
 
   return (
     <>
+      <a href="#main" className="skip-link">Skip to content</a>
       <header className={`fixed inset-x-0 top-0 z-30 transition-colors ${scrolled ? "border-b border-line bg-white/75 backdrop-blur-md" : "bg-transparent"}`}>
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <a href="#top" className="font-display text-lg font-bold text-signal">Haseeb Aleem</a>
-          <nav className="flex items-center gap-6 text-sm">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-4 sm:px-6">
+          <a href="#top" className="font-display text-base font-bold text-signal sm:text-lg">Haseeb Aleem</a>
+          <nav aria-label="Main navigation" className="flex items-center gap-2 text-sm sm:gap-4">
             <a className="hidden hover:text-signal sm:inline" href="#experience">Experience</a>
             <a className="hidden hover:text-signal sm:inline" href="#projects">Projects</a>
             <a className="hidden hover:text-signal sm:inline" href="#contact">Contact</a>
-            <a className="rounded-full bg-signal px-4 py-1.5 text-white hover:bg-ink" href={info.cv} download>Download CV</a>
+            <a className="rounded-full bg-signal px-3 py-2 text-white hover:bg-ink" href={info.cv} download>Download CV</a>
+            <button className="rounded-lg border border-line px-3 py-2 sm:hidden" aria-expanded={menuOpen} aria-controls="mobile-navigation" onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? "Close" : "Menu"}</button>
           </nav>
         </div>
+        {menuOpen && <nav id="mobile-navigation" aria-label="Mobile navigation" className="flex flex-wrap justify-center gap-6 border-t border-line bg-white px-6 py-4 sm:hidden">
+          {["projects", "experience", "contact"].map((id) => <a key={id} href={`#${id}`} onClick={() => setMenuOpen(false)} className="capitalize">{id}</a>)}
+        </nav>}
       </header>
 
-      <div id="top" className="mx-auto max-w-6xl px-6 pt-16">
+      <main id="main"><div id="top" className="mx-auto max-w-6xl px-6 pt-16">
         <section className="grid items-center gap-6 py-10 lg:min-h-[85vh] lg:grid-cols-2">
           <div>
-            <h1 className="rise whitespace-nowrap bg-gradient-to-r from-[#2f5bea] via-[#7c3aed] to-[#db2777] bg-clip-text font-display text-4xl font-bold leading-tight tracking-tight text-transparent sm:text-6xl xl:text-7xl">
+            <h1 className="rise bg-gradient-to-r from-[#2f5bea] via-[#7c3aed] to-[#db2777] bg-clip-text font-display text-4xl font-bold leading-tight tracking-tight text-transparent sm:text-6xl xl:text-7xl">
               Haseeb Aleem
             </h1>
             <p className="rise rise-2 mt-6 min-h-[2.8rem] font-display text-xl font-medium text-[#db2777] md:text-2xl">
-              <Typewriter words={roles} />
+              Senior Full Stack Developer
             </p>
             <p className="rise rise-2 mt-4 max-w-md text-lg leading-relaxed text-mute">{info.tagline}</p>
             <div className="rise rise-3 mt-8 flex flex-wrap gap-3">
@@ -270,11 +189,13 @@ export default function App() {
               <a href="#contact" className="rounded-full border border-ink px-6 py-3 font-medium hover:bg-ink hover:text-white">Get in touch</a>
             </div>
           </div>
-          <div className="relative mx-auto h-[340px] w-[340px] md:h-[520px] md:w-[520px]">
-            <div className="absolute inset-0"><Suspense fallback={null}><Hero3D /></Suspense></div>
+          <div className="hero-portrait relative mx-auto aspect-square w-full max-w-[440px]">
+            <div aria-hidden="true" className="portrait-orbit absolute inset-[12%] rounded-full border border-signal/20" />
             <Photo />
           </div>
         </section>
+
+        <Projects />
 
         <Section id="about" title="About" color={accent[0]}>
           <p className="max-w-2xl text-lg leading-relaxed">{about}</p>
@@ -342,8 +263,6 @@ export default function App() {
         </Section>
       </div>
 
-      <Projects />
-
       <div className="mx-auto max-w-6xl px-6">
         <Section id="education" title="Education" color={accent[3]}>
           {education.map(([a, b]) => (
@@ -369,7 +288,7 @@ export default function App() {
         </Section>
 
         <footer className="border-t border-line py-8 text-sm text-mute">© {new Date().getFullYear()} Haseeb Aleem</footer>
-      </div>
+      </div></main>
     </>
   );
 }
