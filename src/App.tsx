@@ -195,8 +195,6 @@ export default function App() {
           </div>
         </section>
 
-        <Projects />
-
         <Section id="about" title="About" color={accent[0]}>
           <p className="max-w-2xl text-lg leading-relaxed">{about}</p>
           <p className="mt-4 text-mute">{info.location}</p>
@@ -264,6 +262,8 @@ export default function App() {
       </div>
 
       <div className="mx-auto max-w-6xl px-6">
+        <Projects />
+
         <Section id="education" title="Education" color={accent[3]}>
           {education.map(([a, b]) => (
             <div key={a} className="flex flex-col justify-between gap-1 border-b border-line py-3 first:pt-0 sm:flex-row">
