@@ -1,8 +1,9 @@
 import { useEffect, useRef } from "react";
 import { IcosahedronGeometry } from "three";
+import { sectionIcons, type IconSegment } from "./sectionIcons";
 
 type Point = { x: number; y: number; z: number };
-type Anchor = { element: HTMLElement; width: number; stop: number; color: string };
+type Anchor = { element: HTMLElement; width: number; stop: number; color: string; id: string; icon: IconSegment[] };
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 const clamp = (t: number) => Math.max(0, Math.min(1, t));
 const ease = (t: number) => t * t * (3 - 2 * t);
@@ -24,7 +25,7 @@ export default function ScrollAccent() {
     if (!surface || !ctx || !origin) return;
     const reduced = matchMedia("(prefers-reduced-motion: reduce)");
     const headings = Array.from(document.querySelectorAll<HTMLElement>("[data-scroll-title]"));
-    const heroMesh = mesh(2), accentMesh = mesh(0);
+    const heroMesh = mesh(2);
     let anchors: Anchor[] = [];
     let frame = 0, lastTime = 0, angle = 0;
     let disposed = false;
@@ -42,7 +43,7 @@ export default function ScrollAccent() {
         const sticky = section.querySelector<HTMLElement>(".sticky");
         const top = sticky ? section.getBoundingClientRect().top + scrollY + rect.top - sticky.getBoundingClientRect().top : rect.top + scrollY;
         const color = element.nextElementSibling ? getComputedStyle(element.nextElementSibling).backgroundColor : "#2f5bea";
-        return { element, width, color, stop: Math.max(1, Math.min(document.documentElement.scrollHeight - innerHeight, top + rect.height / 2 - innerHeight * .42)) };
+        return { element, width, color, id: section.id, icon: sectionIcons[section.id] || sectionIcons.projects, stop: Math.max(1, Math.min(document.documentElement.scrollHeight - innerHeight, top + rect.height / 2 - innerHeight * .42)) };
       });
       wake();
     };
@@ -95,7 +96,23 @@ export default function ScrollAccent() {
         for (const point of projected) { ctx.beginPath(); ctx.arc(point.x, point.y, mix(1.5, 1, shrink), 0, Math.PI * 2); ctx.fill(); }
       };
       render(heroMesh, 1 - shrink);
-      render(accentMesh, shrink * .8);
+      if (shrink > 0) {
+        const source = from || to;
+        const colorA = source.color.match(/[\d.]+/g)?.map(Number) || [47, 91, 234];
+        const colorB = to.color.match(/[\d.]+/g)?.map(Number) || [47, 91, 234];
+        ctx.strokeStyle = `rgb(${colorA.slice(0, 3).map((value, i) => Math.round(mix(value, colorB[i], journey))).join(",")})`;
+        ctx.globalAlpha = shrink;
+        ctx.lineWidth = innerWidth < 768 ? 1.7 : 1.9;
+        ctx.lineCap = "round"; ctx.lineJoin = "round";
+        ctx.beginPath();
+        for (let i = 0; i < to.icon.length; i++) {
+          const a = source.icon[i], b = to.icon[i];
+          ctx.moveTo(x + mix(a.start[0], b.start[0], journey) * radius, y + mix(a.start[1], b.start[1], journey) * radius);
+          ctx.lineTo(x + mix(a.end[0], b.end[0], journey) * radius, y + mix(a.end[1], b.end[1], journey) * radius);
+        }
+        ctx.stroke();
+        ctx.lineCap = "butt"; ctx.lineJoin = "miter";
+      }
       // Keep the large mesh behind the portrait as it leaves the hero.
       const photo = origin.querySelector("img");
       if (photo) {
@@ -105,11 +122,12 @@ export default function ScrollAccent() {
         ctx.globalCompositeOperation = "source-over";
       }
       ctx.globalAlpha = 1;
+      surface.dataset.accentIcon = shrink < .5 ? "sphere" : journey < .5 ? (from || to).id : to.id;
       surface.dataset.accentTarget = to.element.textContent || "";
       surface.dataset.accentRadius = radius.toFixed(1);
       surface.dataset.accentX = x.toFixed(1);
       surface.dataset.accentY = y.toFixed(1);
-      if (!reduced.matches && y > -radius && y < innerHeight + radius) frame = requestAnimationFrame(draw);
+      if (!reduced.matches && shrink < 1 && y > -radius && y < innerHeight + radius) frame = requestAnimationFrame(draw);
     };
     function wake() { if (!frame && !disposed) frame = requestAnimationFrame(draw); }
     const visibility = () => { if (document.hidden) { cancelAnimationFrame(frame); frame = 0; } else wake(); };
