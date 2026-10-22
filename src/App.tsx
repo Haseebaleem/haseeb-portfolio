@@ -3,7 +3,7 @@ import HeroMotion from "./HeroMotion";
 import { info, roles, about, skills, jobs, projects, education } from "./data";
 
 type Project = (typeof projects)[number];
-const ScrollMorph = lazy(() => import("./ScrollMorph"));
+const ScrollAccent = lazy(() => import("./ScrollAccent"));
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const accent = ["#2f5bea", "#7c3aed", "#db2777", "#0891b2", "#ea580c"];
 const GH = "https://github.com/Haseebaleem";
@@ -54,7 +54,7 @@ function Section({ id, title, color, children }: { id: string; title: string; co
   return (
     <section id={id} className="scroll-mt-16 border-t border-line py-16 md:grid md:grid-cols-[200px_1fr] md:gap-10">
       <div className="mb-8 md:mb-0">
-        <h2 data-morph-title className="font-display text-2xl font-bold">{title}</h2>
+        <h2 data-scroll-title className="font-display text-2xl font-bold">{title}</h2>
         <span className="mt-2 block h-1 w-12 rounded-full" style={{ background: color }} />
       </div>
       <div>{children}</div>
@@ -174,7 +174,7 @@ function Projects() {
         <div className="mx-auto flex h-full max-w-6xl flex-col justify-center px-6 pb-8 pt-20">
           <div className="mb-8 flex items-center justify-between">
             <div>
-              <h2 data-morph-title className="font-display text-2xl font-bold">Projects</h2>
+              <h2 data-scroll-title className="font-display text-2xl font-bold">Projects</h2>
               <span className="mt-2 block h-1 w-12 rounded-full" style={{ background: c }} />
             </div>
             <span className="font-display text-xl font-bold" style={{ color: c }}>
@@ -235,7 +235,7 @@ export default function App() {
 
   return (
     <>
-      <Suspense fallback={null}><ScrollMorph /></Suspense>
+      <Suspense fallback={null}><ScrollAccent /></Suspense>
       <a href="#main" className="skip-link">Skip to content</a>
       <header className={`fixed inset-x-0 top-0 z-30 transition-colors ${scrolled ? "border-b border-line bg-white/75 backdrop-blur-md" : "bg-transparent"}`}>
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-4 sm:px-6">
@@ -269,7 +269,7 @@ export default function App() {
               <a href="#contact" className="rounded-full border border-ink px-6 py-3 font-medium hover:bg-ink hover:text-white">Get in touch</a>
             </div>
           </div>
-          <div data-morph-origin className="relative mx-auto aspect-square w-full max-w-[340px] md:max-w-[520px]">
+          <div data-scroll-origin className="relative mx-auto aspect-square w-full max-w-[340px] md:max-w-[520px]">
             <div className="hero-photo absolute inset-0"><Photo /></div>
           </div>
         </HeroMotion>
