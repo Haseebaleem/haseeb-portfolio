@@ -26,6 +26,18 @@ export default function ScrollAccent() {
     const reduced = matchMedia("(prefers-reduced-motion: reduce)");
     const headings = Array.from(document.querySelectorAll<HTMLElement>("[data-scroll-title]"));
     const heroMesh = mesh(2);
+    // Each wireframe edge becomes an icon segment; there is no second faded layer.
+    const edgeKeys = new Set<string>();
+    const heroEdges: { start: Point; end: Point }[] = [];
+    const key = (p: Point) => [p.x, p.y, p.z].map(v => v.toFixed(5)).join(",");
+    for (let i = 0; i < heroMesh.length; i += 3) {
+      for (let j = 0; j < 3; j++) {
+        const start = heroMesh[i + j], end = heroMesh[i + (j + 1) % 3];
+        const id = [key(start), key(end)].sort().join("|");
+        if (!edgeKeys.has(id)) { edgeKeys.add(id); heroEdges.push({ start, end }); }
+      }
+    }
+    heroEdges.sort((a, b) => Math.atan2(a.start.y + a.end.y, a.start.x + a.end.x) - Math.atan2(b.start.y + b.end.y, b.start.x + b.end.x));
     let anchors: Anchor[] = [];
     let frame = 0, lastTime = 0, angle = 0;
     let disposed = false;
@@ -77,42 +89,37 @@ export default function ScrollAccent() {
       const radius = mix(hero.width * .42, radiusSmall, shrink);
       if (!reduced.matches) angle += delta * .22;
       const sin = Math.sin(angle), cos = Math.cos(angle);
-      const render = (points: Point[], opacity: number) => {
-        if (opacity <= 0) return;
-        const projected = points.map(p => ({
-          x: x + (p.x * cos + p.z * sin) * radius,
-          y: y + (p.y * .98 - (p.z * cos - p.x * sin) * .18) * radius,
-        }));
-        ctx.globalAlpha = opacity;
-        ctx.strokeStyle = shrink > .5 ? to.color : "#2f5bea";
-        ctx.lineWidth = mix(.85, 1.15, shrink); ctx.beginPath();
-        for (let i = 0; i < projected.length; i += 3) {
-          ctx.moveTo(projected[i].x, projected[i].y);
-          ctx.lineTo(projected[i + 1].x, projected[i + 1].y);
-          ctx.lineTo(projected[i + 2].x, projected[i + 2].y); ctx.closePath();
-        }
-        ctx.stroke();
-        ctx.fillStyle = shrink > .5 ? to.color : "#db2777";
-        for (const point of projected) { ctx.beginPath(); ctx.arc(point.x, point.y, mix(1.5, 1, shrink), 0, Math.PI * 2); ctx.fill(); }
-      };
-      render(heroMesh, 1 - shrink);
-      if (shrink > 0) {
-        const source = from || to;
-        const colorA = source.color.match(/[\d.]+/g)?.map(Number) || [47, 91, 234];
-        const colorB = to.color.match(/[\d.]+/g)?.map(Number) || [47, 91, 234];
-        ctx.strokeStyle = `rgb(${colorA.slice(0, 3).map((value, i) => Math.round(mix(value, colorB[i], journey))).join(",")})`;
-        ctx.globalAlpha = shrink;
-        ctx.lineWidth = innerWidth < 768 ? 1.7 : 1.9;
-        ctx.lineCap = "round"; ctx.lineJoin = "round";
-        ctx.beginPath();
+      const source = from || to;
+      const colorA = (from ? source.color : "rgb(47, 91, 234)").match(/[\d.]+/g)?.map(Number) || [47, 91, 234];
+      const colorB = to.color.match(/[\d.]+/g)?.map(Number) || [47, 91, 234];
+      const morph = reduced.matches ? 0 : from ? 1 : ease(clamp((progress - .12) / .58));
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = `rgb(${colorA.slice(0, 3).map((value, i) => Math.round(mix(value, colorB[i], journey))).join(",")})`;
+      ctx.lineWidth = mix(.85, innerWidth < 768 ? 1.7 : 1.9, morph);
+      ctx.lineCap = "round"; ctx.lineJoin = "round";
+      ctx.beginPath();
+      const project = (p: Point) => ({
+        x: p.x * cos + p.z * sin,
+        y: p.y * .98 - (p.z * cos - p.x * sin) * .18,
+      });
+      if (morph < 1) {
+        // Move the actual edge endpoints into the outline, keeping one opaque shape.
+        heroEdges.forEach((edge, i) => {
+          const target = to.icon[Math.floor(i * to.icon.length / heroEdges.length)];
+          const a = project(edge.start), b = project(edge.end);
+          ctx.moveTo(x + mix(a.x, target.start[0], morph) * radius, y + mix(a.y, target.start[1], morph) * radius);
+          ctx.lineTo(x + mix(b.x, target.end[0], morph) * radius, y + mix(b.y, target.end[1], morph) * radius);
+        });
+      } else {
         for (let i = 0; i < to.icon.length; i++) {
           const a = source.icon[i], b = to.icon[i];
           ctx.moveTo(x + mix(a.start[0], b.start[0], journey) * radius, y + mix(a.start[1], b.start[1], journey) * radius);
           ctx.lineTo(x + mix(a.end[0], b.end[0], journey) * radius, y + mix(a.end[1], b.end[1], journey) * radius);
         }
-        ctx.stroke();
-        ctx.lineCap = "butt"; ctx.lineJoin = "miter";
       }
+      ctx.stroke();
+      ctx.lineCap = "butt"; ctx.lineJoin = "miter";
+      surface.dataset.accentMorph = morph.toFixed(3);
       // Keep the large mesh behind the portrait as it leaves the hero.
       const photo = origin.querySelector("img");
       if (photo) {
