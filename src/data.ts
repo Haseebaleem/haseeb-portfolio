@@ -98,16 +98,114 @@ export const jobs = [
   },
 ];
 
-export const projects = [
+export type PortfolioProject = {
+  name: string;
+  status: string;
+  ownership: string;
+  highlights: string[];
+  repo: string;
+  live: string;
+  desc: string;
+  stack: string;
+  details?: { title: string; items: string[] }[];
+};
+
+export const projects: PortfolioProject[] = [
   {
     name: "iPanel",
     status: "Company platform",
     ownership: "Built the platform end to end and led the eight-person delivery team.",
-    highlights: ["Tenant-level access control for multiple ISP organizations.", "PostgreSQL and Prisma data layer supporting ISP management workflows.", "Owned implementation, code reviews, mentoring and deployment work."],
+    highlights: [
+      "End-to-end ISP workflows spanning subscriber onboarding, network configuration, billing and accounting.",
+      "Separate application and RADIUS PostgreSQL databases with Prisma clients and directional logical replication.",
+      "Transactional subscriber creation and shared invoice-settlement logic for manual and gateway payment flows.",
+      "Database-driven forms and PostgreSQL notifications connected to live browser updates through Socket.IO.",
+    ],
     repo: "",
     live: "",
-    desc: "Multi-tenant ISP management SaaS used by multiple providers, with tenant-level access control and high query throughput. This is a company project, so there is no public code.",
-    stack: "Node.js, Express, React, PostgreSQL, Prisma",
+    desc: "An ISP operations platform connecting operators, franchises, dealers, subdealers and subscribers. iPanel brings service provisioning, package management, billing, reseller balances, accounting and network monitoring into one React application backed by Node.js and PostgreSQL.",
+    stack: "React, TypeScript, Vite, Node.js, Express, PostgreSQL, Prisma, Socket.IO",
+    details: [
+      {
+        title: "Platform setup and access",
+        items: [
+          "Operator and company setup, service-area hierarchies, customer/vendor records, classifications, invoice templates and billing settings.",
+          "Super Admin, Admin, Franchise, Dealer, Subdealer and Subscriber roles, with configurable permissions and role-aware navigation.",
+          "JWT bearer-token authentication and bcrypt password hashing for panel accounts. Backend role and ownership enforcement remains a review area in the documented local source.",
+        ],
+      },
+      {
+        title: "Subscriber lifecycle and service catalog",
+        items: [
+          "Products define charges; plans combine products and quantities; packages connect commercial pricing with network policies, IP pools and bandwidth allocation.",
+          "Subscriber onboarding creates credentials, profile, parent reseller links, address, package, activation settings, order and applicable initial invoice within an application transaction.",
+          "Profile and package changes, expiry management, static-IP assignment, NAS associations, documents, identity proof, contacts, comments and subscriber inventory.",
+          "RADIUS access attributes and group membership are stored in the application database and replicated to the network authentication database.",
+        ],
+      },
+      {
+        title: "Reseller hierarchy and revenue sharing",
+        items: [
+          "Operator → franchise → dealer → subdealer → subscriber relationships, with package and NAS assignments at reseller level.",
+          "Reseller margins, profit shares, wallet balances, credit limits, payment records and statements.",
+          "Separate franchise, dealer and subdealer ledgers, with payment logic distinguishing internal parent-wallet transfers from external gateway receipts.",
+        ],
+      },
+      {
+        title: "Billing and subscription payments",
+        items: [
+          "Subscription orders and invoices, quotations, refunds, payment processing and service activation/renewal workflows.",
+          "Business-specific calculations for recurring charges, one-time charges, prorated prices and sequential taxes: other tax is applied to the PRA-inclusive amount.",
+          "The documented prepaid renewal rule targets the 10th of the following month; Pay-As-You-Go expiry advances by one calendar month.",
+          "A shared settlement helper connects invoice payment, wallet movement, ledger posting, reseller shares and RADIUS expiry updates. Financial edge cases require further verification.",
+        ],
+      },
+      {
+        title: "Accounting and reporting",
+        items: [
+          "A hierarchical chart of accounts, account and subaccount numbering, general ledgers and role-specific reseller ledgers.",
+          "Expenses, bank accounts and deposits, funds transfers, journals, credit notes and debit notes.",
+          "Sales, payments, due invoices, user balances, refunds, account ledgers, consolidated statements, trial balance, profit/loss, tax and employee-related report views.",
+          "Invoices, wallet movements and accounting postings are distinct records, allowing service charges and money movements to be traced separately.",
+        ],
+      },
+      {
+        title: "RADIUS architecture and live monitoring",
+        items: [
+          "Two PostgreSQL databases separate panel operations from RADIUS access and session data; Prisma handles the schema clients and pg supports SQL and persistent notification listeners.",
+          "Eight shared configuration tables replicate from iPanel to RADIUS; three authentication/accounting tables replicate back to iPanel, with a defined write owner for each direction.",
+          "Completed sessions are archived on the RADIUS side. Replicated accounting changes trigger PostgreSQL notifications, which the backend converts into Socket.IO online/offline updates.",
+          "NAS and policy configuration, authentication/accounting logs, usage views, server/network information, IP pools, assignments and IP change history.",
+          "Router actions and CoA/disconnect integration depend on a separately configured RADIUS service, reachable devices, SSH access and required remote tools.",
+        ],
+      },
+      {
+        title: "Configurable forms and frontend workflows",
+        items: [
+          "Database-driven form definitions control labels, required fields, visibility, defaults, input metadata and regex validation using stable field keys.",
+          "The documented local baseline contains 36 forms and 239 fields reconstructed from active frontend consumers.",
+          "React Router organizes protected feature pages; Axios supplies API requests; Redux and context support shared interface and permission state.",
+          "Shared grids, searchable selections, permission trees, document/table export tools and file/image previews support operational workflows. Uploads are stored by the backend with associated database records.",
+        ],
+      },
+      {
+        title: "JazzCash integration",
+        items: [
+          "Gateway configuration, payment requests, transaction logging and signed callbacks are implemented in the source.",
+          "HMAC-SHA256 verification checks callback integrity, and payment processing connects to the shared subscriber/reseller settlement helpers.",
+          "Live merchant payments were not verified by the documented local checks. Pending wallet-payment state is in memory; durable recovery, duplicate callbacks and reconciliation remain review points.",
+        ],
+      },
+      {
+        title: "Documented verification and current scope",
+        items: [
+          "The project guide dated 16 November 2026 records a successful frontend production build, initial login, all 11 shared-table replication directions, completed-session history/notifications and form API coverage.",
+          "The local schemas contain 102 application models and 11 RADIUS models; shared tables exist in both databases. These counts describe schema scope, not production traffic or distinct business features.",
+          "Quota/FUP automation contains incomplete paths. Multi-invoice settlement, partial/exact-balance payments, concurrent posting, money/date handling and authorization coverage need dedicated review.",
+          "This is a company platform with no public source or demo linked here. The recorded local checks do not establish complete live-payment or real-device verification.",
+        ],
+      },
+    ],
   },
   {
     name: "Inventory-POS",

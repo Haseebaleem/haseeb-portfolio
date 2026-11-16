@@ -130,7 +130,16 @@ function ProjectDetails({ p, onClose, trigger }: { p: Project; onClose: () => vo
         <ul className="mt-3 list-disc space-y-2 pl-5 text-mute">
           {p.highlights.map((item) => <li key={item}>{item}</li>)}
         </ul>
-        <p className="mt-6 text-sm text-mute">{p.stack}</p>
+        {p.details?.map((section) => (
+          <section key={section.title} className="mt-6 border-t border-line pt-6">
+            <h3 className="font-display text-lg font-semibold">{section.title}</h3>
+            <ul className="mt-3 list-disc space-y-3 pl-5 leading-relaxed text-mute">
+              {section.items.map((item) => <li key={item}>{item}</li>)}
+            </ul>
+          </section>
+        ))}
+        <h3 className="mt-6 font-semibold">Technology stack</h3>
+        <p className="mt-2 text-sm leading-relaxed text-mute">{p.stack}</p>
         <div className="mt-6 flex flex-wrap gap-3">
           {p.repo && <a className="rounded-full border border-line px-5 py-3" href={`${GH}/${p.repo}`} target="_blank" rel="noreferrer">Source & documentation ↗</a>}
           {p.live && <a className="rounded-full bg-signal px-5 py-3 text-white" href={p.live} target="_blank" rel="noreferrer">Open live app ↗</a>}
