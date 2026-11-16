@@ -117,7 +117,7 @@ export const projects: PortfolioProject[] = [
     ownership: "Built the platform end to end and led the eight-person delivery team.",
     highlights: [
       "End-to-end ISP workflows spanning subscriber onboarding, network configuration, billing and accounting.",
-      "Separate application and RADIUS PostgreSQL databases with Prisma clients and directional logical replication.",
+      "Separate application and RADIUS PostgreSQL databases with Prisma clients and bi-directional logical replication.",
       "Transactional subscriber creation and shared invoice-settlement logic for manual and gateway payment flows.",
       "Database-driven forms and PostgreSQL notifications connected to live browser updates through Socket.IO.",
     ],
@@ -126,6 +126,44 @@ export const projects: PortfolioProject[] = [
     desc: "An ISP operations platform connecting operators, franchises, dealers, subdealers and subscribers. iPanel brings service provisioning, package management, billing, reseller balances, accounting and network monitoring into one React application backed by Node.js and PostgreSQL.",
     stack: "React, TypeScript, Vite, Node.js, Express, PostgreSQL, Prisma, Socket.IO",
     details: [
+      {
+        title: "Technology stack and responsibilities",
+        items: [
+          "Frontend — React and TypeScript render the operational workspace; Vite handles development and production builds. React Router supplies nested feature routes, layouts and authentication wrappers.",
+          "Interface and state — Bootstrap/React Bootstrap, MUI, styled-components and Sass provide layout and controls. Redux manages shared UI/theme state; React context supplies permissions. AG Grid and shared table components support searchable, paginated operational lists.",
+          "API communication — Axios provides shared request helpers and bearer-token injection. Socket.IO Client receives live status events; toast notifications and progress indicators provide feedback during requests.",
+          "Backend — Node.js and Express organize routes, middleware, controllers and shared services. APIs cover setup, bundles, reseller networks, subscribers, billing, reports, logs, IP management and payment integrations.",
+          "Persistence — PostgreSQL stores relational business and network records. Separate Prisma clients represent the iPanel and RADIUS schemas; pg supplies direct SQL, persistent LISTEN connections and replication tooling.",
+          "Authentication and files — jsonwebtoken signs and verifies panel tokens; bcrypt hashes panel passwords. Multer handles multipart uploads, while FilePond provides browser file selection and previews.",
+          "Integrations and reporting — Socket.IO delivers server events; SSH libraries support configured remote operations; Axios carries outbound payment requests. jsPDF/AutoTable and XLSX support document and spreadsheet exports, with chart libraries used across dashboard/report pages.",
+        ],
+      },
+      {
+        title: "Working flow: setup to an active subscriber",
+        items: [
+          "1. Configure the business — define operator/company details, service areas, staff roles, billing settings and invoice templates, then configure NAS devices, network policies and IP pools.",
+          "2. Build the offering — create charge products and taxes, combine them into plans, and bind plans to packages with prices, bandwidth allocation and access settings. Assign available packages and margins to the reseller hierarchy.",
+          "3. Authenticate the operator — the API checks credentials with bcrypt, resolves the linked staff or reseller profile, and returns a JWT plus role/permission information. The frontend builds the corresponding navigation and attaches the bearer token to API calls.",
+          "4. Load the subscriber form — the browser requests field metadata, builds values from stable field keys, applies required/format checks and submits the mapped payload to the subscriber API.",
+          "5. Create the subscriber — the service writes credentials, profile, address, parent reseller, package, network attributes, activation settings, order and applicable invoice inside an application transaction, so dependent creation steps can roll back together.",
+          "6. Provision network access — the transaction writes RADIUS access attributes and group assignments to iPanel. PostgreSQL replication carries the relevant rows to the RADIUS database used by the external authentication service.",
+          "7. Reflect connection activity — RADIUS authentication and accounting records replicate back to iPanel. Database notifications reach the Node.js listener, which emits Socket.IO events so subscribed screens can update online/offline status.",
+          "8. Continue the lifecycle — operators manage package/profile changes, payments, expiry, documents and IP assignments; billing, wallet and ledger records feed subscriber statements and operational reports.",
+        ],
+      },
+      {
+        title: "Architecture reasoning and tradeoffs",
+        items: [
+          "Separate business and network responsibilities — the application database owns operator, reseller and financial workflows, while the RADIUS database serves access/session responsibilities. Separate schema clients make that boundary explicit in backend code.",
+          "Replicate in both directions with defined ownership — iPanel owns configuration writes and RADIUS owns session/authentication writes. This makes data available to both sides without requiring each controller to independently write the same record to two databases.",
+          "Use event-driven status delivery — PostgreSQL LISTEN/NOTIFY bridges replicated accounting changes to the backend; Socket.IO carries them to the browser. Screens can react to session changes without repeatedly fetching the entire subscriber list. This reports accounting state rather than independently probing device reachability.",
+          "Use transactions for related records — subscriber creation spans identity, service, billing and network tables. A transaction keeps these dependent writes together; financial settlement also groups related postings, although transaction boundaries alone do not resolve every payment edge case.",
+          "Keep Prisma and direct SQL together — schema-specific clients organize database access, while pg supports persistent notification listeners and lower-level SQL operations that need different connection behavior.",
+          "Make forms configurable — storing labels, visibility, defaults and validation metadata allows operational changes through settings. Stable field names preserve the API mapping when display labels change; frontend validation still needs matching server-side checks.",
+          "Centralize settlement logic — manual payments and gateway flows share core posting and activation helpers, reducing duplicated business logic. External receipts are distinguished from internal wallet transfers so their funding sources are handled differently.",
+          "Separate financial concepts — orders/invoices represent charges, wallets record entity balance movements, and ledgers record accounting entries. Keeping them separate supports traceability and reconciliation across subscriber and reseller operations.",
+        ],
+      },
       {
         title: "Platform setup and access",
         items: [
@@ -170,10 +208,13 @@ export const projects: PortfolioProject[] = [
         ],
       },
       {
-        title: "RADIUS architecture and live monitoring",
+        title: "Bi-directional replication and live monitoring",
         items: [
           "Two PostgreSQL databases separate panel operations from RADIUS access and session data; Prisma handles the schema clients and pg supports SQL and persistent notification listeners.",
-          "Eight shared configuration tables replicate from iPanel to RADIUS; three authentication/accounting tables replicate back to iPanel, with a defined write owner for each direction.",
+          "Bi-directional PostgreSQL logical replication keeps iPanel and RADIUS connected: configuration travels iPanel → RADIUS, while authentication and session accounting travel RADIUS → iPanel. Each shared table has one write owner, avoiding competing writes to the same records.",
+          "iPanel → RADIUS publishes eight configuration tables: nas, nasreload, radcheck, radgroupcheck, radgroupreply, radhuntgroup, radreply and radusergroup. RADIUS → iPanel publishes radacct, radaccthistory and radpostauth.",
+          "Publications and subscriptions define each direction, with initial table copying and origin filtering. In the documented same-cluster setup, logical slots are created separately before subscriptions attach to them.",
+          "The accounting trigger is enabled for replicated changes. It emits a user-status notification; the backend resolves the subscriber and broadcasts the username/status pair to connected clients.",
           "Completed sessions are archived on the RADIUS side. Replicated accounting changes trigger PostgreSQL notifications, which the backend converts into Socket.IO online/offline updates.",
           "NAS and policy configuration, authentication/accounting logs, usage views, server/network information, IP pools, assignments and IP change history.",
           "Router actions and CoA/disconnect integration depend on a separately configured RADIUS service, reachable devices, SSH access and required remote tools.",
@@ -196,15 +237,7 @@ export const projects: PortfolioProject[] = [
           "Live merchant payments were not verified by the documented local checks. Pending wallet-payment state is in memory; durable recovery, duplicate callbacks and reconciliation remain review points.",
         ],
       },
-      {
-        title: "Documented verification and current scope",
-        items: [
-          "The project guide dated 16 November 2026 records a successful frontend production build, initial login, all 11 shared-table replication directions, completed-session history/notifications and form API coverage.",
-          "The local schemas contain 102 application models and 11 RADIUS models; shared tables exist in both databases. These counts describe schema scope, not production traffic or distinct business features.",
-          "Quota/FUP automation contains incomplete paths. Multi-invoice settlement, partial/exact-balance payments, concurrent posting, money/date handling and authorization coverage need dedicated review.",
-          "This is a company platform with no public source or demo linked here. The recorded local checks do not establish complete live-payment or real-device verification.",
-        ],
-      },
+
     ],
   },
   {
